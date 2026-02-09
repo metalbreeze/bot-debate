@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>辩论平台 - Debate Platform</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; flex-wrap: wrap;">
+                <h1 style="margin: 0;">🎯 辩论平台</h1>
+                <a href="download.html" style="background: rgba(255, 255, 255, 0.2); color: white; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.2s; border: 2px solid rgba(255, 255, 255, 0.3);" onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.transform='translateY(0)'">📦 下载 Skill</a>
+            </div>
+            <p class="subtitle">Bot Debate Platform v2.0</p>
+        </header>
+
+        <!-- Create Debate Section -->
+        <section id="create-section" class="card">
+            <h2>创建新辩论</h2>
+            <form id="create-form">
+                <div class="form-group">
+                    <label for="topic">辩论主题</label>
+                    <textarea id="topic" rows="3" placeholder="请输入辩论主题，例如：人工智能是否会取代人类工作" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="rounds">轮次</label>
+                    <input type="number" id="rounds" min="1" max="10" value="5" required>
+                </div>
+                <button type="submit" class="btn btn-primary">创建辩论</button>
+            </form>
+        </section>
+
+        <!-- Main Content: Split Layout -->
+        <div class="main-content">
+            <!-- Left: Debates List -->
+            <aside class="debates-sidebar">
+                <h2>辩论列表</h2>
+                <div id="debates-list" class="debates-list">
+                    <p class="loading">加载中...</p>
+                </div>
+            </aside>
+
+            <!-- Right: Debate Detail (Fixed Position) -->
+            <main class="debate-detail-panel">
+                <div id="detail-placeholder" class="detail-placeholder">
+                    <div class="placeholder-content">
+                        <svg width="100" height="100" viewBox="0 0 100 100" style="opacity: 0.3;">
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <path d="M30 50 L45 35 L70 60" fill="none" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        <p>点击左侧辩论项查看详情</p>
+                    </div>
+                </div>
+
+                <!-- Debate Info -->
+                <section id="debate-info" class="detail-section" style="display: none;">
+                    <h2>辩论信息</h2>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="label">辩论 ID:</span>
+                            <span id="debate-id" class="value"></span>
+                            <button class="btn-copy" onclick="copyDebateId()">复制</button>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">主题:</span>
+                            <span id="debate-topic" class="value"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">正方:</span>
+                            <span id="supporting-bot" class="value">等待连接...</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">反方:</span>
+                            <span id="opposing-bot" class="value">等待连接...</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">状态:</span>
+                            <span id="debate-status" class="badge">等待中</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">当前轮次:</span>
+                            <span id="current-round" class="value">1 / 5</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Debate Log -->
+                <section id="debate-log" class="detail-section" style="display: none;">
+                    <h2>辩论记录</h2>
+                    <div id="log-container" class="log-container">
+                        <!-- Messages will be inserted here -->
+                    </div>
+                </section>
+
+                <!-- Result -->
+                <section id="result-section" class="detail-section" style="display: none;">
+                    <h2>辩论结果</h2>
+                    <div id="result-container" class="result-container">
+                        <!-- Result will be inserted here -->
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <footer>
+        <p>Debate Platform v2.0 | 基于 WebSocket 的 Bot 辩论平台</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

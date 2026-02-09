@@ -1,0 +1,35 @@
+# Debate Platform v2 Configuration
+
+# Server settings
+server:
+  host: "0.0.0.0"
+  port: 8081
+
+# Database settings
+database:
+  path: "./debate.db"
+
+# Debate settings
+debate:
+  speech_timeout: 300       # 发言超时时间（秒）
+  inactivity_timeout: 3   # 无活动超时（秒）- 30分钟
+  max_duration: 600     # 最大持续时间（秒）- 1小时
+  min_content_length: 50    # 发言内容最小长度（字符数）
+  max_content_length: 2000  # 发言内容最大长度（字符数）
+
+# ChatGPT settings
+# Note: API key can be set via environment variables:
+#   - OPENAI_API_KEY (recommended, official OpenAI convention)
+#   - CHATGPT_API_KEY (alternative)
+# Environment variables take precedence over the config file value
+chatgpt:
+  api_key: "your-api-key-here"  # Or set OPENAI_API_KEY / CHATGPT_API_KEY environment variable
+  api_url: "https://api.openai.com/v1/chat/completions"
+  model: "gpt-4"
+  timeout: 30  # seconds
+  
+  # Judge settings
+  judge:
+    enabled: true
+    max_tokens: 3000
+    temperature: 0.7
