@@ -148,6 +148,7 @@ function handleWebSocketMessage(message) {
 // Handle debate waiting (before start)
 function handleDebateWaiting(data) {
     updateDebateStatus('waiting');
+    updateSidebarStatus(data.debate_id, 'waiting');
 
     // Show waiting info
     document.getElementById('supporting-bot').textContent = '等待中...';
@@ -181,17 +182,21 @@ function handleDebateWaiting(data) {
 // Handle debate start
 function handleDebateStart(data) {
     updateDebateStatus('active');
+    updateSidebarStatus(data.debate_id, 'active');
     document.getElementById('supporting-bot').textContent = data.supporting_side;
     document.getElementById('opposing-bot').textContent = data.opposing_side;
     document.getElementById('current-round').textContent = `${data.current_round} / ${data.total_rounds}`;
 
-    // Clear loading message
-    document.getElementById('log-container').innerHTML = '';
+    // Clear loading message and show prompt indicator
+    const logContainer = document.getElementById('log-container');
+    logContainer.innerHTML = '';
+    appendPromptIndicator(logContainer, data.next_speaker, data.current_round);
 }
 
 // Handle debate update
 function handleDebateUpdate(data) {
     updateDebateStatus('active');
+    updateSidebarStatus(data.debate_id, 'active');
 
     if (data.supporting_side) {
         document.getElementById('supporting-bot').textContent = data.supporting_side;
@@ -206,11 +211,19 @@ function handleDebateUpdate(data) {
     if (data.debate_log) {
         displayDebateLog(data.debate_log);
     }
+
+    // Show prompt indicator for next speaker
+    if (data.next_speaker) {
+        const logContainer = document.getElementById('log-container');
+        appendPromptIndicator(logContainer, data.next_speaker, data.current_round);
+    }
 }
 
 // Handle debate end
 function handleDebateEnd(data) {
-    updateDebateStatus(data.status || 'completed');
+    const endStatus = data.status || 'completed';
+    updateDebateStatus(endStatus);
+    updateSidebarStatus(data.debate_id, endStatus);
 
     // Update log one last time
     if (data.debate_log) {
@@ -635,6 +648,56 @@ function copyDebateId() {
         console.error('Failed to copy:', err);
         alert('复制失败');
     });
+}
+
+// Append prompt/waiting indicator to log container
+function appendPromptIndicator(container, nextSpeaker, currentRound) {
+    // Remove any existing indicator
+    const existing = container.querySelector('.prompt-indicator');
+    if (existing) existing.remove();
+
+    const indicator = document.createElement('div');
+    indicator.className = 'prompt-indicator';
+    indicator.innerHTML = `
+        <div class="prompt-indicator-content">
+            <span class="prompt-pulse"></span>
+            <span class="prompt-text">轮次 ${currentRound} — 已发送 Prompt 至 <strong>${nextSpeaker}</strong>，等待 Reply...</span>
+        </div>
+    `;
+    container.appendChild(indicator);
+    container.scrollTop = container.scrollHeight;
+}
+
+// Update sidebar debate item status badge in real-time
+function updateSidebarStatus(debateId, status) {
+    if (!debateId) return;
+    const item = document.querySelector(`.debate-item[data-debate-id="${debateId}"]`);
+    if (!item) return;
+
+    const badge = item.querySelector('.badge');
+    if (!badge) return;
+
+    badge.className = 'badge';
+    switch (status) {
+        case 'waiting':
+            badge.classList.add('waiting');
+            badge.textContent = '等待中';
+            break;
+        case 'active':
+            badge.classList.add('active');
+            badge.textContent = '进行中';
+            break;
+        case 'completed':
+            badge.classList.add('completed');
+            badge.textContent = '已完成';
+            break;
+        case 'timeout':
+            badge.classList.add('timeout');
+            badge.textContent = '已超时';
+            break;
+        default:
+            badge.textContent = status;
+    }
 }
 
 // Send heartbeat every 30 seconds

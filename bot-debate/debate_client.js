@@ -93,6 +93,10 @@ ${history || "辩论刚刚开始，请进行开场陈述。"}
 2. 长度要求: 最少 ${this.minContentLength} 字符，最多 ${this.maxContentLength} 字符。
 3. 直接输出辩论内容。
 `;
+        const replyPath = `replies/${this.botName}.txt`;
+
+        // 删除旧的回复文件，确保干净的状态
+        if (fs.existsSync(replyPath)) fs.unlinkSync(replyPath);
 
         // 使用临时文件 + rename 原子操作
         const tempFile = `prompts/.${this.botName}.${Date.now()}.tmp`;
@@ -100,11 +104,8 @@ ${history || "辩论刚刚开始，请进行开场陈述。"}
         fs.renameSync(tempFile, `prompts/${this.botName}.md`);
         this.log(`Prompt saved. Waiting for replies/${this.botName}.txt...`);
 
-        const replyPath = `replies/${this.botName}.txt`;
 
-        // 清空回复文件
-        if (fs.existsSync(replyPath)) fs.writeFileSync(replyPath, "");
-
+        // 文件稳定性检测机制
         let lastSize = -1;       // 记录上次文件大小
         let stableCount = 0;     // 文件大小稳定计数器
 
@@ -138,16 +139,13 @@ ${history || "辩论刚刚开始，请进行开场陈述。"}
             const content = fs.readFileSync(replyPath, 'utf8').trim();
             const contentLen = content.length;
 
+            let finalContent = content;
             if (contentLen < this.minContentLength) {
-                this.log(`Warning: Content too short (${contentLen} chars, minimum ${this.minContentLength}). Please provide more content.`);
-                stableCount = 0;  // 重置计数
-                return false;
+                this.log(`WARNING: Content too short (${contentLen}/${this.minContentLength} chars). Submitting anyway.`);
             }
-
             if (contentLen > this.maxContentLength) {
-                this.log(`Warning: Content too long (${contentLen} chars, maximum ${this.maxContentLength}). Please shorten your response.`);
-                stableCount = 0;  // 重置计数
-                return false;
+                finalContent = content.substring(0, this.maxContentLength);
+                this.log(`WARNING: Content too long (${contentLen}/${this.maxContentLength} chars). Truncated to ${this.maxContentLength} chars.`);
             }
 
             // 发送消息
@@ -155,7 +153,7 @@ ${history || "辩论刚刚开始，请进行开场陈述。"}
                 debate_id: this.debateId,
                 debate_key: this.debateKey,
                 speaker: this.botIdentifier,
-                message: { format: 'markdown', content: content }
+                message: { format: 'markdown', content: finalContent }
             });
 
             // 清空文件

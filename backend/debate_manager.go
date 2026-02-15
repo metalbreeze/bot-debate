@@ -243,6 +243,25 @@ func (dm *DebateManager) BotLogin(loginReq *LoginRequest, conn *websocket.Conn) 
 		JoinedBots:    joinedBots,
 	}
 
+	// Broadcast waiting status to frontend
+	allJoinedBots := []string{}
+	if activeDebate.BotA != nil {
+		allJoinedBots = append(allJoinedBots, activeDebate.BotA.Bot.BotIdentifier)
+	}
+	if activeDebate.BotB != nil {
+		allJoinedBots = append(allJoinedBots, activeDebate.BotB.Bot.BotIdentifier)
+	}
+	dm.broadcast <- BroadcastMessage{
+		DebateID: loginReq.DebateID,
+		Message: createMessage("debate_waiting", DebateWaiting{
+			DebateID:    loginReq.DebateID,
+			Topic:       activeDebate.Debate.Topic,
+			TotalRounds: activeDebate.Debate.TotalRounds,
+			Status:      "waiting",
+			JoinedBots:  allJoinedBots,
+		}),
+	}
+
 	// If both bots are connected, start debate
 	if activeDebate.BotA != nil && activeDebate.BotB != nil {
 		go dm.startDebate(loginReq.DebateID)
@@ -530,10 +549,17 @@ func (dm *DebateManager) startTimeout(debateID, speaker string) {
 		return
 	}
 
-	activeDebate.TimeoutTimer = time.AfterFunc(120*time.Second, func() {
-		log.Printf("Timeout for %s in debate %s", speaker, debateID)
-		dm.endDebate(debateID, "timeout", "speech_timeout")
-	})
+	activeDebate.TimeoutTimer = time.AfterFunc(
+		time.Duration(config.Debate.SpeechTimeout)*time.Second,
+		func() {
+			log.Printf("%d Timeout for %s in debate %s ",
+				config.Debate.SpeechTimeout,
+				speaker,
+				debateID,
+			)
+			dm.endDebate(debateID, "timeout", "speech_timeout")
+		},
+	)
 }
 
 // endDebate ends a debate and generates summary
@@ -669,7 +695,7 @@ func (dm *DebateManager) generateDebateResult(activeDebate *ActiveDebate, status
 	opposingScore = 100 - supportingScore
 
 	// Determine winner
-	winner := "draw"
+	winner := "none"
 
 	// Only determine winner if both sides have spoken
 	if supportingCount > 0 && opposingCount > 0 {
@@ -678,10 +704,7 @@ func (dm *DebateManager) generateDebateResult(activeDebate *ActiveDebate, status
 		} else if opposingScore > supportingScore+5 {
 			winner = "opposing"
 		}
-	} else {
-		// If not both sides spoke, no winner (timeout scenarios)
-		winner = "none"
-	}
+	} 
 
 	// Get bot identifiers safely
 	supportingID := "未连接"
@@ -890,8 +913,7 @@ func (dm *DebateManager) startWaitingTimer(debateID string) {
 		return
 	}
 
-	// Timeout for waiting state: 30 minutes
-	waitingTimeout := 30 * time.Minute
+	waitingTimeout := time.Duration(config.Debate.WaitingTimeout) * time.Second
 
 	activeDebate.WaitingTimer = time.AfterFunc(waitingTimeout, func() {
 		dm.mutex.RLock()
@@ -926,11 +948,11 @@ func (dm *DebateManager) getReasonDescription(reason, supportingBot, opposingBot
 	case reason == "completed":
 		return "辩论正常完成"
 	case reason == "speech_timeout":
-		return "发言超时（Bot 未在规定时间内发言）"
+		return fmt.Sprintf("发言超时（Bot 未在 %d 秒内发言）", config.Debate.SpeechTimeout)
 	case reason == "inactivity_timeout":
-		return "长时间无活动（超过 30 分钟无新发言）"
+		return fmt.Sprintf("长时间无活动（超过 %d 秒无新发言）", config.Debate.InactivityTimeout)
 	case reason == "max_duration_timeout":
-		return "辩论时长超过限制（超过 1 小时）"
+		return fmt.Sprintf("辩论时长超过限制（超过 %d 秒）", config.Debate.MaxDuration)
 	case strings.HasPrefix(reason, "bot_disconnected_"):
 		botID := strings.TrimPrefix(reason, "bot_disconnected_")
 		return fmt.Sprintf("Bot %s 断开连接", botID)

@@ -155,7 +155,7 @@ func handleBotWebSocket(w http.ResponseWriter, r *http.Request) {
 					conn.Close()
 					return
 				}
-
+				missedPings++
 				// Send ping
 				if err := conn.WriteJSON(createMessage("ping", map[string]string{
 					"server_time": getNow(),
@@ -163,9 +163,9 @@ func handleBotWebSocket(w http.ResponseWriter, r *http.Request) {
 					log.Printf("Failed to send ping to bot %s: %v", confirmed.BotIdentifier, err)
 					return
 				}
-
+				time.Sleep(10 * time.Second)
 				// Increment missed pings (will be reset when pong is received)
-				missedPings++
+
 				log.Printf("Sent ping to bot %s (missed: %d)", confirmed.BotIdentifier, missedPings)
 
 			case <-quitHeartbeat:

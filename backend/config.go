@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -22,6 +23,7 @@ type Config struct {
 		SpeechTimeout      int `yaml:"speech_timeout"`
 		InactivityTimeout  int `yaml:"inactivity_timeout"`
 		MaxDuration        int `yaml:"max_duration"`
+		WaitingTimeout     int `yaml:"waiting_timeout"`
 		MinContentLength   int `yaml:"min_content_length"`
 		MaxContentLength   int `yaml:"max_content_length"`
 	} `yaml:"debate"`
@@ -85,6 +87,9 @@ func LoadConfig(configPath string) (*Config, error) {
 	}
 	if config.Debate.MaxDuration == 0 {
 		config.Debate.MaxDuration = 3600 // 1 hour
+	}
+	if config.Debate.WaitingTimeout == 0 {
+		config.Debate.WaitingTimeout = 1800 // 30 minutes
 	}
 	if config.Debate.MinContentLength == 0 {
 		config.Debate.MinContentLength = 50
